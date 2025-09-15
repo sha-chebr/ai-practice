@@ -7,6 +7,7 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__FERNET_KEY: ''  # Disable encryption for local dev
     AIRFLOW__WEBSERVER__SECRET_KEY: 'this-is-a-dev-key-please-change'
+    AIRFLOW__WEBSERVER__WEB_SERVER_PORT: '9090'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -28,7 +29,7 @@ services:
       interval: 5s
       retries: 5
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Changed from default 5432
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -44,9 +45,23 @@ services:
     container_name: airflow-webserver
     command: webserver
     ports:
-      - "8080:8080"
+      - "9090:9090"  # Changed from default 8080
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "--fail", "http://localhost:9090/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
       timeout: 10s
       retries: 5

@@ -1,0 +1,22 @@
+# Local development files
+startup.md
+.env
+
+# Airflow logs and metadata
+logs/
+airflow.db
+
+# Generated data
+data/*.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+
+# Docker volumes
+pgdata/
