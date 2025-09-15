@@ -1,14 +1,25 @@
-FROM apache/airflow:2.8.3-python3.10
+FROM apache/airflow:2.8.4-python3.11
 
-# Install pyspark and psycopg2-binary
+# Use root for system-level package installs; keep layers small and reproducible
 USER root
-RUN pip install --no-cache-dir pyspark psycopg2-binary sqlalchemy
 
-# Download Postgres JDBC driver for Spark JDBC writes
+# Non-interactive apt and install minimal utilities, then install pinned Python packages
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download Postgres JDBC driver for Spark JDBC writes (pin version via ARG)
+ARG POSTGRES_JDBC_VERSION=42.6.0
 RUN mkdir -p /opt/java_jars && \
-    curl -L --silent -o /opt/java_jars/postgresql.jar \
-      https://jdbc.postgresql.org/download/postgresql-42.6.0.jar
+  curl -fsSL "https://jdbc.postgresql.org/download/postgresql-${POSTGRES_JDBC_VERSION}.jar" -o /opt/java_jars/postgresql.jar
 
+# Switch to airflow user and install Python packages into the user's local site-packages
 USER airflow
+ENV PATH=/home/airflow/.local/bin:${PATH}
+RUN python -m pip install --user --upgrade pip setuptools wheel && \
+  python -m pip install --user --no-warn-script-location \
+    pyspark==3.4.1 \
+    psycopg2-binary==2.9.6
 
 ENV AIRFLOW__CORE__LOAD_EXAMPLES=False
