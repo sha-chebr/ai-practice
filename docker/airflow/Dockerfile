@@ -6,8 +6,15 @@ USER root
 # Non-interactive apt and install minimal utilities, then install pinned Python packages
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    default-jdk \
+    procps && \
     rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
 
 # Download Postgres JDBC driver for Spark JDBC writes (pin version via ARG)
 ARG POSTGRES_JDBC_VERSION=42.6.0
